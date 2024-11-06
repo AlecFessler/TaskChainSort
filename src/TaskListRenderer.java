@@ -1,11 +1,15 @@
 package taskChainPlanner;
 
+import javafx.application.Platform;
+import javafx.scene.control.ComboBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TaskListRenderer {
     private Pane taskGroup;
@@ -20,6 +24,26 @@ public class TaskListRenderer {
      */
     public TaskListRenderer(Pane taskGroup) {
         this.taskGroup = taskGroup;
+    }
+
+    /**
+     * Returns the valid state transitions given the current task state
+     *
+     * @param task Task to check state for
+     * @return List<String> representing the valid state transitions
+     */
+    private List<String> getAvailableStates(Task task) {
+        List<String> states = new ArrayList<>();
+        if (task.isComplete()) {
+            states.add("Assigned");
+            states.add("Ready");
+        } else if (task.isAssigned()) {
+            states.add("Complete");
+            states.add("Ready");
+        } else if (task.isReady()) {
+            states.add("Assigned");
+        }
+        return states;
     }
 
     /**
@@ -41,23 +65,38 @@ public class TaskListRenderer {
         taskNameText.setWrappingWidth(TASK_WIDTH);
         taskNameText.setTextAlignment(TextAlignment.CENTER);
 
-        Text taskStatusText = new Text(task.taskState());
-        taskStatusText.setFont(new Font(12));
-        taskStatusText.setWrappingWidth(TASK_WIDTH);
-        taskStatusText.setTextAlignment(TextAlignment.CENTER);
+        ComboBox<String> stateDropdown = new ComboBox<>();
+        stateDropdown.getItems().addAll(getAvailableStates(task));
+        stateDropdown.setValue(task.taskState());
 
         taskRectangle.setLayoutY(yPos);
         taskNameText.setLayoutY(yPos + 20);
-        taskStatusText.setLayoutY(yPos + 40);
+        stateDropdown.setLayoutY(yPos + 25);
+
+        stateDropdown.setOnAction(event -> {
+            String selectedState = stateDropdown.getValue();
+            task.clearBitflags();
+            switch (selectedState) {
+                case "Assigned":
+                    task.setAssigned();
+                    break;
+                case "Complete":
+                    task.setComplete();
+                    break;
+                case "Ready":
+                    task.setReady();
+                    break;
+            }
+        });
 
         taskGroup.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             double centerX = (newWidth.doubleValue() - TASK_WIDTH) / 2;
             taskRectangle.setLayoutX(centerX);
             taskNameText.setLayoutX(centerX);
-            taskStatusText.setLayoutX(centerX);
+            stateDropdown.setLayoutX(centerX);
         });
 
-        taskGroup.getChildren().addAll(taskRectangle, taskNameText, taskStatusText);
+        taskGroup.getChildren().addAll(taskRectangle, taskNameText, stateDropdown);
         return taskRectangle;
     }
 

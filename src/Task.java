@@ -112,6 +112,10 @@ public class Task {
     flags &= ~FLAG_COMPLETE;
   }
 
+  public void clearBitflags() {
+    flags &= 0;
+  }
+
   public String taskState() {
     if (isComplete()) {
       return "Complete";
@@ -161,7 +165,7 @@ public class Task {
               if (firstIteration) {
                 task.setReady();
               } else {
-                task.resetReady();
+                task.clearBitflags();
               }
               tasks.add(task);
           }
